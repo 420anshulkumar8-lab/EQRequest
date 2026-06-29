@@ -47,9 +47,9 @@ flutter:
 
   assets:
     - assets/images/indian_railway.png
-    - assets/images/ek_bharat.png
+    - assets/images/stamp_round.png
+    - assets/images/ekbharat_logo.png
     - assets/images/ashoka.svg
-    - assets/images/stamp.png
     - assets/images/signature.png
     - assets/images/signature_text.png
     - assets/images/hindi_title.png
