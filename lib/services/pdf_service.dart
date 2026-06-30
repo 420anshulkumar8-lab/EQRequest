@@ -1,165 +1,247 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'dart:io';
+import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import '../models/eq_record.dart';
 
-class PnrDetails {
-  final String trainNo;
-  final String trainName;
-  final String doj;
-  final String from;
-  final String to;
-  final String trainClass;
-  final String currentStatus;
-  final bool success;
-  final String? error;
+class PdfService {
+  static Future<File> generatePdf(EqRecord record) async {
+    final pdf = pw.Document();
 
-  PnrDetails({
-    required this.trainNo,
-    required this.trainName,
-    required this.doj,
-    required this.from,
-    required this.to,
-    required this.trainClass,
-    required this.currentStatus,
-    required this.success,
-    this.error,
-  });
-}
+    // ── Fonts ─────────────────────────────────────────────────────────
+    final regularFontData = await rootBundle
+        .load('assets/fonts/NotoSansDevanagari_SemiCondensed-Regular.ttf');
+    final boldFontData = await rootBundle
+        .load('assets/fonts/NotoSansDevanagari_SemiCondensed-SemiBold.ttf');
+    final hindiRegular = pw.Font.ttf(regularFontData);
+    final hindiBold    = pw.Font.ttf(boldFontData);
 
-class PnrService {
-  static const String _apiKey = '7122bceb4bmsh0ca890f011978ffp19633fjsnb08b3e1e3996';
-  static const String _apiHost = 'irctc-indian-railway-pnr-status.p.rapidapi.com';
+    // ── Images ────────────────────────────────────────────────────────
+    final irLogoData       = await rootBundle.load('assets/images/indian_railway.png');
+    final ekBharatData     = await rootBundle.load('assets/images/ekbharat_logo.png');
+    final stampRoundData   = await rootBundle.load('assets/images/stamp_round.png');
+    final signatureData    = await rootBundle.load('assets/images/signature.png');
+    final sigTextData      = await rootBundle.load('assets/images/signature_text.png');
+    final ashokaBytes      = await rootBundle.loadString('assets/images/ashoka.svg');
+    final hindiTitleData   = await rootBundle.load('assets/images/hindi_title.png');
+    final hindiAddressData = await rootBundle.load('assets/images/hindi_address.png');
 
-  static Future<PnrDetails> fetchPnrDetails(String pnr) async {
-    try {
-      final response = await http.get(
-        Uri.parse('https://$_apiHost/getPNRStatus/$pnr'),
-        headers: {
-          'x-rapidapi-key': _apiKey,
-          'x-rapidapi-host': _apiHost,
-          'Content-Type': 'application/json',
-        },
-      ).timeout(const Duration(seconds: 10));
+    final irImage        = pw.MemoryImage(irLogoData.buffer.asUint8List());
+    final ekBharatImage  = pw.MemoryImage(ekBharatData.buffer.asUint8List());
+    final stampImage     = pw.MemoryImage(stampRoundData.buffer.asUint8List());
+    final signatureImage = pw.MemoryImage(signatureData.buffer.asUint8List());
+    final sigTextImage   = pw.MemoryImage(sigTextData.buffer.asUint8List());
+    final hindiTitleImg  = pw.MemoryImage(hindiTitleData.buffer.asUint8List());
+    final hindiAddrImg   = pw.MemoryImage(hindiAddressData.buffer.asUint8List());
 
-      if (response.statusCode == 200) {
-        final root = json.decode(response.body);
+    // ── Text styles ───────────────────────────────────────────────────
+    final engNormal    = pw.TextStyle(fontSize: 10);
+    final engBold      = pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold);
+    final engSmall     = pw.TextStyle(fontSize: 9);
+    final engBoldSmall = pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold);
 
-        final isSuccess = root['success'] == true;
-        if (!isSuccess) {
-          return _empty('PNR not found. Please fill manually.');
-        }
+    final now     = DateTime.now();
+    final dateStr = DateFormat('dd.MM.yyyy').format(now);
 
-        final d = root['data'] as Map<String, dynamic>?;
-        if (d == null) {
-          return _empty('PNR not found. Please fill manually.');
-        }
+    // ── Body line ─────────────────────────────────────────────────────
+    final n = record.berthCount;
+    final berthWord  = n > 1 ? 'berths' : 'berth';
+    final memberWord = n > 1 ? 's' : '';
+    String bodyLine;
+    if (record.passengerType == 'Railway Employee (On Duty)') {
+      bodyLine = 'It is requested to kindly release $n $berthWord under Emergency Quota '
+          'for the following Railway staff member$memberWord proceeding on official duty:';
+    } else if (record.passengerType == 'Railway Employee (Without Duty)') {
+      bodyLine = 'It is requested to kindly release $n $berthWord under Emergency Quota '
+          'for the following Railway staff member$memberWord:';
+    } else {
+      bodyLine = 'It is requested to kindly release $n $berthWord under Emergency Quota '
+          'for the following passenger${n > 1 ? 's' : ''}:';
+    }
 
-        final trainNo   = d['trainNumber']?.toString() ?? '';
-        final trainName = d['trainName']?.toString() ?? '';
-        final doj       = _formatDate(d['dateOfJourney']?.toString() ?? '');
-        final from      = d['boardingPoint']?.toString() ??
-                          d['sourceStation']?.toString() ?? '';
-        final to        = d['reservationUpto']?.toString() ??
-                          d['destinationStation']?.toString() ?? '';
-        final cls       = d['journeyClass']?.toString() ?? '';
-        final currentStatus = _extractCurrentStatus(d);
+    final nameDisplay = n > 1 ? '${record.name} + ${n - 1}' : record.name;
 
-        if (trainNo.isNotEmpty) {
-          return PnrDetails(
-            trainNo: trainNo,
-            trainName: trainName,
-            doj: doj,
-            from: from,
-            to: to,
-            trainClass: _mapClass(cls),
-            currentStatus: currentStatus,
-            success: true,
+    final officeParts   = record.toOffice.split('\n');
+    final toDesignation = officeParts.isNotEmpty ? officeParts[0] : '';
+    final toAddress     = officeParts.length > 1 ? officeParts.sublist(1).join('\n') : '';
+
+    // ═════════════════════════════════════════════════════════════════
+    pdf.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.fromLTRB(60, 40, 60, 40),
+        build: (pw.Context context) {
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+
+              // ── LETTERHEAD LOGOS ─────────────────────────────────
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: pw.CrossAxisAlignment.center,
+                children: [
+                  pw.Image(irImage,       width: 80, height: 80),
+                  pw.SvgImage(svg: ashokaBytes, width: 60, height: 60),
+                  pw.Image(ekBharatImage, width: 80, height: 80), // Ek Bharat top-right ✅
+                ],
+              ),
+              pw.SizedBox(height: 6),
+
+              // ── OFFICE NAME ──────────────────────────────────────
+              pw.Center(
+                child: pw.Column(
+                  children: [
+                    pw.Image(hindiTitleImg, height: 22),
+                    pw.SizedBox(height: 2),
+                    pw.Text('Office of the Sr. Divisional Elect. Engineer (TRS)',
+                        style: engBold),
+                    pw.SizedBox(height: 2),
+                    pw.Image(hindiAddrImg, height: 14),
+                    pw.SizedBox(height: 2),
+                    pw.Text('E-mail:- gzbelstech@gmail.com', style: engSmall),
+                  ],
+                ),
+              ),
+              pw.SizedBox(height: 4),
+              pw.Divider(thickness: 1),
+
+              // ── LETTER NO. + DATE ────────────────────────────────
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text('Letter No.: 230-Elect./TRS/GZB/EQ Request',
+                      style: engSmall),
+                  pw.Text('Date:- $dateStr', style: engSmall),
+                ],
+              ),
+              pw.SizedBox(height: 8),
+
+              // ── TO ADDRESS + ROUND STAMP OVERLAY ────────────────
+              // Stack: To-address on left, round stamp floating center-right
+              pw.SizedBox(
+                height: 95,
+                child: pw.Stack(
+                  children: [
+                    // To address — left side
+                    pw.Positioned(
+                      left: 0, top: 8,
+                      child: pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Text(toDesignation, style: engBold),
+                          pw.Text(toAddress,     style: engNormal),
+                        ],
+                      ),
+                    ),
+                    // Round stamp — page center ✅
+                    pw.Align(
+                      alignment: pw.Alignment.center,
+                      child: pw.Image(stampImage, width: 90, height: 90),
+                    ),
+                  ],
+                ),
+              ),
+
+              // ── SUBJECT ──────────────────────────────────────────
+              pw.Center(
+                child: pw.Text(
+                  'Sub : Request for Release of Emergency Quota Berth',
+                  style: engBold,
+                ),
+              ),
+              pw.SizedBox(height: 6),
+              pw.Center(child: pw.Text('*****', style: engSmall)),
+              pw.SizedBox(height: 10),
+
+              // ── BODY ─────────────────────────────────────────────
+              pw.Text(bodyLine, style: engNormal),
+              pw.SizedBox(height: 12),
+
+              // ── TABLE ────────────────────────────────────────────
+              pw.Center(
+                child: pw.SizedBox(
+                  width: 300,
+                  child: pw.Table(
+                    border: pw.TableBorder.all(width: 0.5),
+                    columnWidths: const {
+                      0: pw.FixedColumnWidth(110),
+                      1: pw.FixedColumnWidth(190),
+                    },
+                    children: [
+                      _row('PNR No.',         record.pnr,         engBoldSmall, engSmall),
+                      _row('Train No.',       record.trainNo,     engBoldSmall, engSmall),
+                      _row('Date of Journey', record.doj,         engBoldSmall, engSmall),
+                      _row('From - To',
+                           '${record.fromStation} - ${record.toStation}',
+                           engBoldSmall, engSmall),
+                      _row('Class',     record.trainClass, engBoldSmall, engSmall),
+                      _row('Name',      nameDisplay,       engBoldSmall, engSmall),
+                      _row('Mobile No.',record.mobile,     engBoldSmall, engSmall),
+                      _row('Reference', record.reference,  engBoldSmall, engSmall),
+                    ],
+                  ),
+                ),
+              ),
+              pw.SizedBox(height: 16),
+
+              // ── CLOSING LINE ─────────────────────────────────────
+              pw.Text(
+                'Your cooperation in this regard shall be highly appreciated.',
+                style: engNormal,
+              ),
+              pw.SizedBox(height: 30),
+
+              // ── SIGNATURE (right side) ───────────────────────────
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.end,
+                children: [
+                  pw.Image(signatureImage, width: 130, height: 52),
+                ],
+              ),
+              pw.SizedBox(height: 4),
+
+              // ── OFFICER DETAILS (right aligned) ──────────────────
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.end,
+                children: [
+                  pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.center,
+                    children: [
+                      pw.Text('(GAURAV GOEL)',                        style: engBoldSmall),
+                      pw.Text('Sr. Divisional Electric Engineer/TRS', style: engSmall),
+                      pw.Text('IRSEE',                                style: engSmall),
+                      pw.Text('Electric Loco Shed, Ghaziabad',        style: engSmall),
+                      pw.Text('CUG MOB: 9717631304',                  style: engSmall),
+                      pw.SizedBox(height: 6),
+                      pw.Image(sigTextImage, width: 130, height: 57),
+                    ],
+                  ),
+                ],
+              ),
+
+            ],
           );
-        } else {
-          return _empty('PNR not found. Please fill manually.');
-        }
-      } else if (response.statusCode == 429) {
-        return _empty('API limit reached. Please fill manually.');
-      } else {
-        return _empty('Error ${response.statusCode}. Please fill manually.');
-      }
-    } catch (e) {
-      return _empty('Network error. Please fill manually.');
-    }
+        },
+      ),
+    );
+    // ═════════════════════════════════════════════════════════════════
+
+    final dir      = await getApplicationDocumentsDirectory();
+    final fileName = 'EQ_${record.pnr}_${DateFormat('ddMMyyyy_HHmm').format(now)}.pdf';
+    final file     = File('${dir.path}/$fileName');
+    await file.writeAsBytes(await pdf.save());
+    return file;
   }
 
-  static String _extractCurrentStatus(Map<String, dynamic> d) {
-    try {
-      final list = d['passengerList'] as List?;
-      if (list == null || list.isEmpty) return '';
-
-      final p = list[0] as Map<String, dynamic>;
-
-      final statusCode = p['currentStatusCode']?.toString() ?? '';
-      final coach      = p['currentCoachId']?.toString() ?? '';
-      final berth      = p['currentBerthNo']?.toString() ?? '';
-
-      if (statusCode == 'CNF' && coach.isNotEmpty && berth.isNotEmpty) {
-        return 'CNF/$coach/$berth';
-      } else if (statusCode.isNotEmpty) {
-        return statusCode;
-      }
-      return '';
-    } catch (_) {
-      return '';
-    }
-  }
-
-  static PnrDetails _empty(String error) => PnrDetails(
-    trainNo: '', trainName: '', doj: '', from: '', to: '',
-    trainClass: '', currentStatus: '', success: false, error: error,
-  );
-
-  static String _formatDate(String raw) {
-    try {
-      if (raw.isEmpty) return '';
-      final months = {
-        'Jan': '01', 'Feb': '02', 'Mar': '03', 'Apr': '04',
-        'May': '05', 'Jun': '06', 'Jul': '07', 'Aug': '08',
-        'Sep': '09', 'Oct': '10', 'Nov': '11', 'Dec': '12',
-      };
-      final match = RegExp(r'([A-Za-z]{3})\s+(\d{1,2}),\s+(\d{4})').firstMatch(raw);
-      if (match != null) {
-        final mon  = months[match.group(1)] ?? '01';
-        final day  = match.group(2)!.padLeft(2, '0');
-        final year = match.group(3)!.substring(2);
-        return '$day-$mon-$year';
-      }
-      if (raw.contains('-')) {
-        final parts = raw.split('-');
-        if (parts.length == 3) {
-          if (parts[0].length == 4) {
-            return '${parts[2]}-${parts[1]}-${parts[0].substring(2)}';
-          } else {
-            final y = parts[2].length > 2 ? parts[2].substring(2) : parts[2];
-            return '${parts[0]}-${parts[1]}-$y';
-          }
-        }
-      }
-      if (raw.contains('/')) {
-        final parts = raw.split('/');
-        if (parts.length == 3) {
-          final y = parts[2].length > 2 ? parts[2].substring(2) : parts[2];
-          return '${parts[0]}-${parts[1]}-$y';
-        }
-      }
-      return raw;
-    } catch (_) {
-      return raw;
-    }
-  }
-
-  static String _mapClass(String raw) {
-    final r = raw.toUpperCase().trim();
-    const classMap = {
-      '1A': '1AC', '2A': '2AC', '3A': '3AC', '3E': '3AC-E',
-      'SL': 'SL',  'CC': 'CC',  'EC': 'ECC', 'ECC': 'ECC',
-      '1AC': '1AC','2AC': '2AC','3AC': '3AC',
-    };
-    return classMap[r] ?? r;
+  static pw.TableRow _row(String label, String value,
+      pw.TextStyle labelStyle, pw.TextStyle valueStyle) {
+    return pw.TableRow(children: [
+      pw.Padding(padding: const pw.EdgeInsets.all(5),
+          child: pw.Text(label, style: labelStyle)),
+      pw.Padding(padding: const pw.EdgeInsets.all(5),
+          child: pw.Text(value, style: valueStyle)),
+    ]);
   }
 }
