@@ -181,7 +181,7 @@ class PdfService {
                     },
                     children: [
                       _row('PNR No.',        record.pnr,          engBoldSmall, engSmall),
-                      _row('Train No.',      record.trainNo,       engBoldSmall, engSmall),
+                      _row('Train No. & Name', '${record.trainNo} - ${record.trainName}', engBoldSmall, engSmall),
                       _row('Date of Journey',record.doj,          engBoldSmall, engSmall),
                       _row('From - To',
                             '${record.fromStation} - ${record.toStation}',
