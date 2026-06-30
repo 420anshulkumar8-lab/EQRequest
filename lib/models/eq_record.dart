@@ -48,4 +48,8 @@ class EqRecord extends HiveObject {
 
   @HiveField(14)
   late String zone;
+
+  // 👇 Naya field yahan add kiya hai 👇
+  @HiveField(15)
+  late String trainName;
 }
