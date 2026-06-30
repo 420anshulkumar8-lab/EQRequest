@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 
 class PnrDetails {
   final String trainNo;
+  final String trainName;
   final String doj;
   final String from;
   final String to;
@@ -12,6 +13,7 @@ class PnrDetails {
 
   PnrDetails({
     required this.trainNo,
+    required this.trainName,
     required this.doj,
     required this.from,
     required this.to,
@@ -37,37 +39,23 @@ class PnrService {
       ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
+        final jsonResponse = json.decode(response.body);
 
-        // Response parse karo
-        if (data != null) {
-          final trainNo = data['trainNumber']?.toString() ??
-              data['TrainNo']?.toString() ??
-              data['train_number']?.toString() ?? '';
+        // Check if API returned success: true and data is not null
+        if (jsonResponse['success'] == true && jsonResponse['data'] != null) {
+          final data = jsonResponse['data'];
 
-          final doj = _formatDate(
-            data['dateOfJourney']?.toString() ??
-            data['DateOfJourney']?.toString() ??
-            data['doj']?.toString() ?? '',
-          );
-
-          final from = data['boardingStationCode']?.toString() ??
-              data['BoardingPoint']?.toString() ??
-              data['from']?.toString() ??
-              data['sourceStation']?.toString() ?? '';
-
-          final to = data['reservationUpto']?.toString() ??
-              data['DestinationStation']?.toString() ??
-              data['to']?.toString() ??
-              data['destinationStation']?.toString() ?? '';
-
-          final cls = data['class']?.toString() ??
-              data['Class']?.toString() ??
-              data['classCode']?.toString() ?? '';
+          final trainNo = data['trainNumber']?.toString() ?? '';
+          final trainName = data['trainName']?.toString() ?? ''; 
+          final doj = _formatDate(data['dateOfJourney']?.toString() ?? '');
+          final from = data['boardingPoint']?.toString() ?? '';
+          final to = data['reservationUpto']?.toString() ?? '';
+          final cls = data['journeyClass']?.toString() ?? '';
 
           if (trainNo.isNotEmpty) {
             return PnrDetails(
               trainNo: trainNo,
+              trainName: trainName,
               doj: doj,
               from: from,
               to: to,
@@ -76,66 +64,65 @@ class PnrService {
             );
           } else {
             return PnrDetails(
-              trainNo: '', doj: '', from: '', to: '', trainClass: '',
+              trainNo: '', trainName: '', doj: '', from: '', to: '', trainClass: '',
               success: false,
               error: 'PNR not found. Please fill manually.',
             );
           }
         } else {
           return PnrDetails(
-            trainNo: '', doj: '', from: '', to: '', trainClass: '',
+            trainNo: '', trainName: '', doj: '', from: '', to: '', trainClass: '',
             success: false,
-            error: 'Invalid response. Please fill manually.',
+            error: 'Invalid response from API. Please fill manually.',
           );
         }
       } else if (response.statusCode == 429) {
         return PnrDetails(
-          trainNo: '', doj: '', from: '', to: '', trainClass: '',
+          trainNo: '', trainName: '', doj: '', from: '', to: '', trainClass: '',
           success: false,
           error: 'API limit reached. Please fill manually.',
         );
       } else {
         return PnrDetails(
-          trainNo: '', doj: '', from: '', to: '', trainClass: '',
+          trainNo: '', trainName: '', doj: '', from: '', to: '', trainClass: '',
           success: false,
           error: 'Error ${response.statusCode}. Please fill manually.',
         );
       }
     } catch (e) {
       return PnrDetails(
-        trainNo: '', doj: '', from: '', to: '', trainClass: '',
+        trainNo: '', trainName: '', doj: '', from: '', to: '', trainClass: '',
         success: false,
         error: 'Network error. Please fill manually.',
       );
     }
   }
 
+  // Date formatter to handle "Jul 23, 2026 6:00:00 PM"
   static String _formatDate(String raw) {
     try {
       if (raw.isEmpty) return '';
-      // DD-MM-YYYY format
-      if (raw.contains('-')) {
-        final parts = raw.split('-');
-        if (parts.length == 3) {
-          if (parts[0].length == 4) {
-            // YYYY-MM-DD → DD-MM-YY
-            return '${parts[2]}-${parts[1]}-${parts[0].substring(2)}';
-          } else {
-            // DD-MM-YYYY → DD-MM-YY
-            return '${parts[0]}-${parts[1]}-${parts[2].substring(2)}';
-          }
-        }
-      }
-      // DD/MM/YYYY
-      if (raw.contains('/')) {
-        final parts = raw.split('/');
-        if (parts.length == 3) {
-          return '${parts[0]}-${parts[1]}-${parts[2].substring(2)}';
-        }
+      
+      final parts = raw.split(' ');
+      if (parts.length >= 3) {
+        final monthStr = parts[0]; 
+        final dayStr = parts[1].replaceAll(',', ''); 
+        final yearStr = parts[2]; 
+
+        const months = {
+          'Jan': '01', 'Feb': '02', 'Mar': '03', 'Apr': '04',
+          'May': '05', 'Jun': '06', 'Jul': '07', 'Aug': '08',
+          'Sep': '09', 'Oct': '10', 'Nov': '11', 'Dec': '12'
+        };
+
+        final month = months[monthStr] ?? monthStr;
+        final year = yearStr.length == 4 ? yearStr.substring(2) : yearStr;
+
+        return '${dayStr.padLeft(2, '0')}-$month-$year';
       }
       return raw;
     } catch (_) {
-      return raw;
+      return raw; 
     }
   }
 
