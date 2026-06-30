@@ -21,6 +21,7 @@ class _FormScreenState extends State<FormScreen> {
 
   final _pnrCtrl = TextEditingController();
   final _trainCtrl = TextEditingController();
+  final _trainNameCtrl = TextEditingController(); // Added Train Name Controller
   final _fromCtrl = TextEditingController();
   final _toCtrl = TextEditingController();
   final _nameCtrl = TextEditingController();
@@ -59,6 +60,7 @@ class _FormScreenState extends State<FormScreen> {
       _isFetching = false;
       if (details.success) {
         _trainCtrl.text = details.trainNo;
+        _trainNameCtrl.text = details.trainName; // Handled Train Name
         _doj = details.doj;
         _fromCtrl.text = details.from;
         _toCtrl.text = details.to;
@@ -128,6 +130,7 @@ class _FormScreenState extends State<FormScreen> {
     final record = EqRecord()
       ..pnr = _pnrCtrl.text.trim()
       ..trainNo = _trainCtrl.text.trim()
+      ..trainName = _trainNameCtrl.text.trim() // Make sure `trainName` exists in EqRecord model
       ..doj = _doj!
       ..fromStation = _fromCtrl.text.trim().toUpperCase()
       ..toStation = _toCtrl.text.trim().toUpperCase()
@@ -189,7 +192,7 @@ class _FormScreenState extends State<FormScreen> {
           padding: const EdgeInsets.all(16),
           children: [
             // TO OFFICE
-            _SectionHeader(title: 'To (Addressee)'),
+            const _SectionHeader(title: 'To (Addressee)'),
             SearchableOfficeDropdown(
               selected: _selectedOffice,
               customOfficeText: _customOfficeText,
@@ -201,7 +204,7 @@ class _FormScreenState extends State<FormScreen> {
             const SizedBox(height: 16),
 
             // PNR + FETCH
-            _SectionHeader(title: 'PNR Details'),
+            const _SectionHeader(title: 'PNR Details'),
             Row(
               children: [
                 Expanded(
@@ -244,6 +247,15 @@ class _FormScreenState extends State<FormScreen> {
             ),
             const SizedBox(height: 10),
 
+            // Train Name
+            _buildTextField(
+              controller: _trainNameCtrl,
+              label: 'Train Name',
+              hint: 'e.g. NDLS MLDT EXP',
+              validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+            ),
+            const SizedBox(height: 10),
+
             // DOJ
             GestureDetector(
               onTap: _pickDate,
@@ -279,7 +291,7 @@ class _FormScreenState extends State<FormScreen> {
                     controller: _fromCtrl,
                     label: 'From',
                     hint: 'NDLS',
-                    maxLength: 4,
+                    maxLength: 5, // Updated to 5
                     inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z]'))],
                     validator: (v) => v == null || v.length < 2 ? 'Min 2 chars' : null,
                   ),
@@ -290,7 +302,7 @@ class _FormScreenState extends State<FormScreen> {
                     controller: _toCtrl,
                     label: 'To',
                     hint: 'GKP',
-                    maxLength: 4,
+                    maxLength: 5, // Updated to 5
                     inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z]'))],
                     validator: (v) => v == null || v.length < 2 ? 'Min 2 chars' : null,
                   ),
@@ -310,7 +322,7 @@ class _FormScreenState extends State<FormScreen> {
             const SizedBox(height: 16),
 
             // PASSENGER DETAILS
-            _SectionHeader(title: 'Passenger Details'),
+            const _SectionHeader(title: 'Passenger Details'),
             _buildTextField(
               controller: _nameCtrl,
               label: 'Name',
