@@ -35,7 +35,7 @@ class _RecordsScreenState extends State<RecordsScreen> {
             child: TextField(
               controller: _searchCtrl,
               decoration: InputDecoration(
-                hintText: 'Search by PNR, Name, Date...',
+                hintText: 'Search by PNR, Name, Date, Train...',
                 prefixIcon: const Icon(Icons.search),
                 filled: true,
                 fillColor: Colors.white,
@@ -58,7 +58,8 @@ class _RecordsScreenState extends State<RecordsScreen> {
                     r.pnr.toLowerCase().contains(_query) ||
                     r.name.toLowerCase().contains(_query) ||
                     r.createdAt.contains(_query) ||
-                    r.trainNo.contains(_query),
+                    r.trainNo.contains(_query) ||
+                    r.trainName.toLowerCase().contains(_query), // Train Name search added here
                   ).toList();
                 }
 
@@ -147,7 +148,8 @@ class _RecordCard extends StatelessWidget {
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('${record.name} • Train ${record.trainNo}', style: const TextStyle(fontSize: 12)),
+            // Train No and Train Name combined here
+            Text('${record.name} • ${record.trainNo} - ${record.trainName}', style: const TextStyle(fontSize: 12)),
             Text('${record.fromStation} → ${record.toStation} • ${record.doj}', style: const TextStyle(fontSize: 11, color: Colors.grey)),
           ],
         ),
