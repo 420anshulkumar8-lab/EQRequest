@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'home_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -20,6 +19,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     _fadeAnim = CurvedAnimation(parent: _ctrl, curve: Curves.easeIn);
     _ctrl.forward();
 
+    // 3 seconds baad Home Screen par chala jayega
     Future.delayed(const Duration(seconds: 3), () {
       if (mounted) {
         Navigator.of(context).pushReplacement(
@@ -45,38 +45,30 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Logos row
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Image.asset('assets/images/indian_railway.jpg', width: 70, height: 70),
-                  const SizedBox(width: 20),
-                  SvgPicture.asset('assets/images/ashoka.svg', width: 60, height: 60),
-                  const SizedBox(width: 20),
-                  Image.asset('assets/images/ek_bharat.png', width: 70, height: 70),
-                ],
+              // Sirf App Icon show hoga
+              ClipRRect(
+                borderRadius: BorderRadius.circular(24), // Icon ko thoda rounded shape dene ke liye
+                child: Image.asset(
+                  'assets/images/app_icon.png',
+                  width: 140,
+                  height: 140,
+                ),
               ),
               const SizedBox(height: 30),
+              
+              // Kewal EQ Request text
               const Text(
                 'EQ Request',
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 2,
+                  fontSize: 32,
+                  fontWeight: FontWeight.w800, // Extra bold premium look
+                  letterSpacing: 2.5,
                 ),
               ),
-              const SizedBox(height: 8),
-              const Text(
-                'Emergency Quota Manager',
-                style: TextStyle(color: Colors.white70, fontSize: 14),
-              ),
-              const SizedBox(height: 6),
-              const Text(
-                'Electric Loco Shed, Ghaziabad',
-                style: TextStyle(color: Colors.white54, fontSize: 11),
-              ),
-              const SizedBox(height: 40),
+              const SizedBox(height: 50),
+              
+              // Loading indicator
               const CircularProgressIndicator(
                 color: Colors.white,
                 strokeWidth: 2,
