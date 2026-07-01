@@ -10,36 +10,23 @@ class PdfService {
   static Future<File> generatePdf(EqRecord record) async {
     final pdf = pw.Document();
 
-    // ── Fonts ──────────────────────────────────────────────────────────
-    // Using SemiCondensed-Regular for better Devanagari matra rendering
-    final regularFontData = await rootBundle
-        .load('assets/fonts/NotoSansDevanagari_SemiCondensed-Regular.ttf');
-    final boldFontData = await rootBundle
-        .load('assets/fonts/NotoSansDevanagari_SemiCondensed-SemiBold.ttf');
-    final hindiRegular = pw.Font.ttf(regularFontData);
-    final hindiBold    = pw.Font.ttf(boldFontData);
-
     // ── Images ─────────────────────────────────────────────────────────
     final irLogoData        = await rootBundle.load('assets/images/indian_railway.png');
-    final ekBharatLogoData  = await rootBundle.load('assets/images/ek_bharat.png');
-    final stampImgData      = await rootBundle.load('assets/images/stamp.png');
+    final ekBharatLogoData  = await rootBundle.load('assets/images/ekbharat_logo.png');
+    final stampImgData      = await rootBundle.load('assets/images/stamp_round.png');
     final signatureImgData  = await rootBundle.load('assets/images/signature.png');
     final sigTextImgData    = await rootBundle.load('assets/images/signature_text.png');
     final ashokaBytes       = await rootBundle.loadString('assets/images/ashoka.svg');
-    final hindiTitleData    = await rootBundle.load('assets/images/hindi_title.png');
-    final hindiAddressData  = await rootBundle.load('assets/images/hindi_address.png');
 
     final irImage         = pw.MemoryImage(irLogoData.buffer.asUint8List());
     final ekBharatImage   = pw.MemoryImage(ekBharatLogoData.buffer.asUint8List());
     final stampImage      = pw.MemoryImage(stampImgData.buffer.asUint8List());
     final signatureImage  = pw.MemoryImage(signatureImgData.buffer.asUint8List());
-    final sigTextImage      = pw.MemoryImage(sigTextImgData.buffer.asUint8List());
-    final hindiTitleImage   = pw.MemoryImage(hindiTitleData.buffer.asUint8List());
-    final hindiAddressImage = pw.MemoryImage(hindiAddressData.buffer.asUint8List());
+    final sigTextImage    = pw.MemoryImage(sigTextImgData.buffer.asUint8List());
 
-    // ── Text styles ────────────────────────────────────────────────────
-    final hindiBoldStyle = pw.TextStyle(font: hindiBold,    fontSize: 11);
-    final hindiSmall     = pw.TextStyle(font: hindiRegular, fontSize: 9);
+    // ── Text styles (Using Default PDF Fonts) ──────────────────────────
+    final titleStyle     = pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold);
+    final subtitleStyle  = pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold);
     final engNormal      = pw.TextStyle(fontSize: 10);
     final engBold        = pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold);
     final engSmall       = pw.TextStyle(fontSize: 9);
@@ -80,7 +67,6 @@ class PdfService {
     pdf.addPage(
       pw.Page(
         pageFormat: PdfPageFormat.a4,
-        // ↑ Margins increased on all sides
         margin: const pw.EdgeInsets.fromLTRB(60, 40, 60, 40),
         build: (pw.Context context) {
           return pw.Column(
@@ -92,63 +78,57 @@ class PdfService {
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: pw.CrossAxisAlignment.center,
                 children: [
-                  // Railway logo — increased to match Ek Bharat size
                   pw.Image(irImage, width: 80, height: 80),
                   pw.SvgImage(svg: ashokaBytes, width: 60, height: 60),
                   pw.Image(ekBharatImage, width: 80, height: 80),
                 ],
               ),
-              pw.SizedBox(height: 6),
+              pw.SizedBox(height: 12),
 
-              // ── OFFICE NAME (center) ───────────────────────────────
+              // ── OFFICE NAME (Pure Text) ──────────────────────────────
               pw.Center(
                 child: pw.Column(
                   children: [
-                    pw.Image(hindiTitleImage, height: 22),
-                    pw.SizedBox(height: 2),
-                    pw.Text(
-                      'Office of the Sr. Divisional Elect. Engineer (TRS)',
-                      style: engBold,
-                    ),
-                    pw.SizedBox(height: 2),
-                    pw.Image(hindiAddressImage, height: 14),
-                    pw.SizedBox(height: 2),
-                    pw.Text(
-                      'ई/मेल-E-mail:-gzbelstech@gmail.com',
-                      style: engSmall,
-                    ),
+                    pw.Text('Office of the Sr. Divisional Elect. Engineer (TRS)', style: titleStyle),
+                    pw.SizedBox(height: 4),
+                    pw.Text('Electric Loco Shed, Ghaziabad', style: subtitleStyle),
+                    pw.SizedBox(height: 4),
+                    pw.Text('E-mail:- gzbelstech@gmail.com', style: engSmall),
                   ],
                 ),
               ),
-              pw.SizedBox(height: 4),
+              pw.SizedBox(height: 8),
               pw.Divider(thickness: 1),
 
               // ── PATRANK + DATE ─────────────────────────────────────
               pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
-                  pw.Text(
-                    'Letter No.: 230-Elect./TRS/GZB/EQ Request',
-                    style: engSmall,
-                  ),
+                  pw.Text('Letter No.: 230-Elect./TRS/GZB/EQ Request', style: engSmall),
                   pw.Text('Date:- $dateStr', style: engSmall),
                 ],
               ),
-              pw.SizedBox(height: 10),
+              pw.SizedBox(height: 16),
 
-              // ── TO ADDRESS  +  ROUND STAMP (left side) ────────────
-              // Stamp on left, To-address on right — exactly like reference
+              // ── TO ADDRESS + ROUND STAMP (Fixed Layout) ────────────
               pw.Row(
                 crossAxisAlignment: pw.CrossAxisAlignment.center,
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
-                  pw.Image(stampImage, width: 88, height: 88),
-                  pw.SizedBox(width: 12),
-                  pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: [
-                      pw.Text(toDesignation, style: engBold),
-                      pw.Text(toAddress,     style: engNormal),
-                    ],
+                  // Expanded ensures the text doesn't push into the stamp's area
+                  pw.Expanded(
+                    child: pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        pw.Text(toDesignation, style: engBold),
+                        pw.Text(toAddress, style: engNormal),
+                      ],
+                    ),
+                  ),
+                  // Padding keeps the stamp separated and shifted to the right
+                  pw.Padding(
+                    padding: const pw.EdgeInsets.only(left: 20),
+                    child: pw.Image(stampImage, width: 88, height: 88),
                   ),
                 ],
               ),
@@ -156,10 +136,7 @@ class PdfService {
 
               // ── SUBJECT ───────────────────────────────────────────
               pw.Center(
-                child: pw.Text(
-                  'Sub : Request for Release of Emergency Quota Berth',
-                  style: engBold,
-                ),
+                child: pw.Text('Sub : Request for Release of Emergency Quota Berth', style: engBold),
               ),
               pw.SizedBox(height: 6),
               pw.Center(child: pw.Text('*****', style: engSmall)),
@@ -169,7 +146,7 @@ class PdfService {
               pw.Text(bodyLine, style: engNormal),
               pw.SizedBox(height: 12),
 
-              // ── TABLE (centered, 70% width) ───────────────────────
+              // ── TABLE ─────────────────────────────────────────────
               pw.Center(
                 child: pw.SizedBox(
                   width: 380,
@@ -203,7 +180,7 @@ class PdfService {
               ),
               pw.SizedBox(height: 30),
 
-              // ── SIGNATURE  (right side, slightly left from edge) ──
+              // ── SIGNATURE ─────────────────────────────────────────
               pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.end,
                 children: [
@@ -215,7 +192,7 @@ class PdfService {
               ),
               pw.SizedBox(height: 4),
 
-              // ── OFFICER DETAILS  (right aligned, below signature) ─
+              // ── OFFICER DETAILS ───────────────────────────────────
               pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.end,
                 children: [
@@ -228,7 +205,6 @@ class PdfService {
                       pw.Text('Electric Loco Shed, Ghaziabad',      style: engSmall),
                       pw.Text('CUG MOB: 9717631304',                style: engSmall),
                       pw.SizedBox(height: 6),
-                      // ── HINDI OFFICE STAMP (signature_text.png) ──
                       pw.Image(sigTextImage, width: 130, height: 57),
                     ],
                   ),
