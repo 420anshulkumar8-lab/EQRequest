@@ -25,11 +25,14 @@ jobs:
           flutter-version: '3.19.6'
           channel: 'stable'
 
-      # 👇 Yahan --project-name eq_request add kiya hai taaki capital letters ka error na aaye 👇
-      - name: Upgrade Android to v2 Embedding
+      # 👇 Android folder fresh banega aur Kotlin version automatically 1.9.22 par set ho jayega 👇
+      - name: Upgrade Android & Fix Kotlin
         run: |
           rm -rf android
           flutter create --project-name eq_request . --platforms=android
+          find android -type f \( -name "build.gradle" -o -name "settings.gradle" \) -exec sed -i -E "s/ext.kotlin_version = '.*'/ext.kotlin_version = '1.9.22'/g" {} +
+          find android -type f \( -name "build.gradle" -o -name "settings.gradle" \) -exec sed -i -E 's/version "1.7.10"/version "1.9.22"/g' {} +
+          find android -type f \( -name "build.gradle" -o -name "settings.gradle" \) -exec sed -i -E 's/version "1.8.22"/version "1.9.22"/g' {} +
 
       - name: Install Packages
         run: flutter pub get
@@ -39,11 +42,12 @@ jobs:
           dart pub global activate flutter_launcher_icons
           flutter pub run flutter_launcher_icons:main
 
+      # 👇 compileSdk ko wapas 34 (stable Android 14) par kar diya hai taaki AAPT2 error na aaye 👇
       - name: Fix printing plugin compileSdk
         run: |
           find ~/.pub-cache -path "*/printing-*/android/build.gradle" | while read f; do
-            sed -i 's/compileSdk = [0-9]*/compileSdk = 36/g' "$f"
-            sed -i 's/compileSdkVersion [0-9]*/compileSdkVersion 36/g' "$f"
+            sed -i 's/compileSdk = [0-9]*/compileSdk = 34/g' "$f"
+            sed -i 's/compileSdkVersion [0-9]*/compileSdkVersion 34/g' "$f"
           done
 
       - name: Fix Syncfusion jcenter issue
