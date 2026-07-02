@@ -22,8 +22,14 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.19.6'  # 👈 Yahan humne stable version fix kar diya hai taaki v1 embedding error na aaye
+          flutter-version: '3.19.6'
           channel: 'stable'
+
+      # 👇 YAHAN JADOO HOGA: Purana Android folder hateg aur naya (v2) banega 👇
+      - name: Upgrade Android to v2 Embedding
+        run: |
+          rm -rf android
+          flutter create . --platforms=android
 
       - name: Install Packages
         run: flutter pub get
