@@ -110,13 +110,13 @@ class PdfService {
               ),
               pw.SizedBox(height: 16),
 
-              // ── TO ADDRESS + ROUND STAMP (Fixed Layout) ────────────
+              // ── TO ADDRESS + ROUND STAMP (Adjusted Left) ────────────
               pw.Row(
                 crossAxisAlignment: pw.CrossAxisAlignment.center,
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                mainAxisAlignment: pw.MainAxisAlignment.start,
                 children: [
-                  // Expanded ensures the text doesn't push into the stamp's area
-                  pw.Expanded(
+                  pw.SizedBox(
+                    width: 250, // Fix width for address taaki stamp over-write na kare
                     child: pw.Column(
                       crossAxisAlignment: pw.CrossAxisAlignment.start,
                       children: [
@@ -125,11 +125,8 @@ class PdfService {
                       ],
                     ),
                   ),
-                  // Padding keeps the stamp separated and shifted to the right
-                  pw.Padding(
-                    padding: const pw.EdgeInsets.only(left: 20),
-                    child: pw.Image(stampImage, width: 88, height: 88),
-                  ),
+                  pw.SizedBox(width: 15), // Address aur stamp ke beech ka space
+                  pw.Image(stampImage, width: 88, height: 88),
                 ],
               ),
               pw.SizedBox(height: 16),
@@ -180,25 +177,18 @@ class PdfService {
               ),
               pw.SizedBox(height: 30),
 
-              // ── SIGNATURE ─────────────────────────────────────────
-              pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.end,
-                children: [
-                  pw.Padding(
-                    padding: const pw.EdgeInsets.only(right: 18),
-                    child: pw.Image(signatureImage, width: 130, height: 52),
-                  ),
-                ],
-              ),
-              pw.SizedBox(height: 4),
-
-              // ── OFFICER DETAILS ───────────────────────────────────
+              // ── SIGNATURE AUR OFFICER DETAILS (Perfectly Aligned) ───
               pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.end,
                 children: [
                   pw.Column(
                     crossAxisAlignment: pw.CrossAxisAlignment.center,
                     children: [
+                      // Signature slightly shifted right using left padding
+                      pw.Padding(
+                        padding: const pw.EdgeInsets.only(left: 15), 
+                        child: pw.Image(signatureImage, width: 130, height: 52),
+                      ),
                       pw.Text('(GAURAV GOEL)',                      style: engBoldSmall),
                       pw.Text('Sr. Divisional Electric Engineer/TRS', style: engSmall),
                       pw.Text('IRSEE',                              style: engSmall),
