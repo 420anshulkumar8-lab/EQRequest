@@ -22,6 +22,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
+          flutter-version: '3.19.6'  # 👈 Yahan humne stable version fix kar diya hai taaki v1 embedding error na aaye
           channel: 'stable'
 
       - name: Install Packages
@@ -39,7 +40,6 @@ jobs:
             sed -i 's/compileSdkVersion [0-9]*/compileSdkVersion 36/g' "$f"
           done
 
-      # 👇 Naya Step: Syncfusion ke jcenter() issue ko zabardasti fix karne ke liye 👇
       - name: Fix Syncfusion jcenter issue
         run: |
           find ~/.pub-cache -path "*/syncfusion_*-*/android/build.gradle" | while read f; do
