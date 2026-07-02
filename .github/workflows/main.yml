@@ -27,6 +27,10 @@ jobs:
       - name: Install Packages
         run: flutter pub get
 
+      # ⭐️ ICON GENERATION STEP ⭐️
+      - name: Generate App Icon
+        run: flutter pub run flutter_launcher_icons
+
       - name: Fix printing plugin compileSdk
         run: |
           find ~/.pub-cache -path "*/printing-*/android/build.gradle" | while read f; do
