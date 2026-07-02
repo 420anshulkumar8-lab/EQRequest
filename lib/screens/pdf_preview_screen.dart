@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:printing/printing.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart'; // Naya import
 import '../models/eq_record.dart';
 
 class PdfPreviewScreen extends StatelessWidget {
@@ -18,17 +18,10 @@ class PdfPreviewScreen extends StatelessWidget {
         foregroundColor: Colors.white,
         title: const Text('EQ Letter Preview'),
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.share),
-            onPressed: () => _shareFile(context),
-            tooltip: 'Share',
-          ),
-        ],
+        // ❌ Yahan se top wala Share icon remove kar diya hai
       ),
       body: Column(
         children: [
-          // Success Banner
           Container(
             color: Colors.green.shade50,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -45,17 +38,16 @@ class PdfPreviewScreen extends StatelessWidget {
               ],
             ),
           ),
-          
-          // ── NAYA PDF VIEWER (WITH ZOOM) ──
           Expanded(
-            child: SfPdfViewer.file(
-              pdfFile,
-              canShowScrollHead: false, // Extra scrollbars ko hide karne ke liye
-              enableDoubleTapZooming: true, // Double tap karke zoom karne ka option
+            child: PdfPreview(
+              build: (_) => pdfFile.readAsBytesSync(),
+              // 👇 Ye dono FALSE karne se PDF ke upar floating Print/Share wale extra icons gayab ho jayenge
+              allowPrinting: false,
+              allowSharing: false,
+              canChangePageFormat: false,
+              canChangeOrientation: false,
             ),
           ),
-          
-          // Bottom Action Buttons
           Container(
             color: Colors.white,
             padding: const EdgeInsets.all(12),
