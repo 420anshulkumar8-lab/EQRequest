@@ -15,7 +15,7 @@ dependencies:
   # PDF Generation & Viewing
   pdf: ^3.10.7
   printing: ^5.12.0
-  syncfusion_flutter_pdfviewer: ^26.1.40   # 👈 Naya Package Zoom ke liye add kiya hai
+  syncfusion_flutter_pdfviewer: ^26.1.40
 
   # Local Database
   hive: ^2.2.3
@@ -42,7 +42,7 @@ dev_dependencies:
   hive_generator: ^2.0.1
   build_runner: ^2.4.6
   flutter_lints: ^2.0.0
-  flutter_launcher_icons: ^0.13.1   # App Icon Package Add Kiya Hai
+  flutter_launcher_icons: ^0.13.1
 
 flutter:
   uses-material-design: true
@@ -54,10 +54,10 @@ flutter:
     - assets/images/ashoka.svg
     - assets/images/signature.png
     - assets/images/signature_text.png
-    - assets/images/app_icon.png      # Custom App Icon ko assets me bhi add kar diya
+    - assets/images/app_icon.png
 
-# 👇 App Icon Configuration 👇
-flutter_icons:
+flutter_launcher_icons:
   android: true
-  ios: true
+  ios: false
   image_path: "assets/images/app_icon.png"
+  min_sdk_android: 21
