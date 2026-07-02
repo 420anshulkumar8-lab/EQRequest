@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:printing/printing.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart'; // Naya import
 import '../models/eq_record.dart';
 
 class PdfPreviewScreen extends StatelessWidget {
@@ -28,6 +28,7 @@ class PdfPreviewScreen extends StatelessWidget {
       ),
       body: Column(
         children: [
+          // Success Banner
           Container(
             color: Colors.green.shade50,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -44,15 +45,17 @@ class PdfPreviewScreen extends StatelessWidget {
               ],
             ),
           ),
+          
+          // ── NAYA PDF VIEWER (WITH ZOOM) ──
           Expanded(
-            child: PdfPreview(
-              build: (_) => pdfFile.readAsBytesSync(),
-              allowPrinting: true,
-              allowSharing: true,
-              canChangePageFormat: false,
-              canChangeOrientation: false,
+            child: SfPdfViewer.file(
+              pdfFile,
+              canShowScrollHead: false, // Extra scrollbars ko hide karne ke liye
+              enableDoubleTapZooming: true, // Double tap karke zoom karne ka option
             ),
           ),
+          
+          // Bottom Action Buttons
           Container(
             color: Colors.white,
             padding: const EdgeInsets.all(12),
@@ -96,7 +99,7 @@ class PdfPreviewScreen extends StatelessWidget {
       await Share.shareXFiles(
         [XFile(pdfFile.path)],
         subject: 'EQ Request - PNR ${record.pnr}',
-        text: 'EQ Request Letter for PNR: ${record.pnr}, Train: ${record.trainNo}, Date: ${record.doj}',
+        text: 'EQ Request Letter for PNR: ${record.pnr}, Train: ${record.trainNo} - ${record.trainName}, Date: ${record.doj}',
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
