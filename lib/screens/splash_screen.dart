@@ -19,7 +19,6 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     _fadeAnim = CurvedAnimation(parent: _ctrl, curve: Curves.easeIn);
     _ctrl.forward();
 
-    // 3 seconds baad Home Screen par chala jayega
     Future.delayed(const Duration(seconds: 3), () {
       if (mounted) {
         Navigator.of(context).pushReplacement(
@@ -38,39 +37,36 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1A237E),
+      backgroundColor: Colors.white, // Background White kar diya
       body: FadeTransition(
         opacity: _fadeAnim,
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Sirf App Icon show hoga
               ClipRRect(
-                borderRadius: BorderRadius.circular(24), // Icon ko thoda rounded shape dene ke liye
+                borderRadius: BorderRadius.circular(24),
                 child: Image.asset(
                   'assets/images/app_icon.png',
-                  width: 140,
-                  height: 140,
+                  width: 200, // Logo ka size bada kar diya
+                  height: 200,
                 ),
               ),
               const SizedBox(height: 30),
               
-              // Kewal EQ Request text
               const Text(
                 'EQ Request',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: Color(0xFF1A237E), // Text color Blue kar diya
                   fontSize: 32,
-                  fontWeight: FontWeight.w800, // Extra bold premium look
+                  fontWeight: FontWeight.w900,
                   letterSpacing: 2.5,
                 ),
               ),
               const SizedBox(height: 50),
               
-              // Loading indicator
               const CircularProgressIndicator(
-                color: Colors.white,
+                color: Color(0xFF1A237E), // Loader color Blue kar diya
                 strokeWidth: 2,
               ),
             ],
