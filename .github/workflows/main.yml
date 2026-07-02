@@ -27,15 +27,23 @@ jobs:
       - name: Install Packages
         run: flutter pub get
 
-      # ⭐️ ICON GENERATION STEP ⭐️
       - name: Generate App Icon
-        run: flutter pub run flutter_launcher_icons
+        run: |
+          dart pub global activate flutter_launcher_icons
+          flutter pub run flutter_launcher_icons:main
 
       - name: Fix printing plugin compileSdk
         run: |
           find ~/.pub-cache -path "*/printing-*/android/build.gradle" | while read f; do
             sed -i 's/compileSdk = [0-9]*/compileSdk = 36/g' "$f"
             sed -i 's/compileSdkVersion [0-9]*/compileSdkVersion 36/g' "$f"
+          done
+
+      # 👇 Naya Step: Syncfusion ke jcenter() issue ko zabardasti fix karne ke liye 👇
+      - name: Fix Syncfusion jcenter issue
+        run: |
+          find ~/.pub-cache -path "*/syncfusion_*-*/android/build.gradle" | while read f; do
+            sed -i 's/jcenter()/mavenCentral()/g' "$f"
           done
 
       - name: Build APK
